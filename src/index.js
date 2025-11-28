@@ -1,55 +1,53 @@
-// backend/src/index.js
-const express = require('express');
-const cors = require('cors');
+import express from "express";
+import cors from "cors";
 
 const app = express();
 
-// Allow frontend URLs (dev + production) — update VERCEL_URL to your real frontend URL later.
-app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'https://ph-salary-frontend-asher.vercel.app/'
-  ]
-}));
-
 app.use(express.json());
 
-app.get('/', (req, res) => {
-  res.send('Backend is running');
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://ph-salary-frontend.vercel.app",
+      "https://ph-salary-frontend-production.up.railway.app"
+    ],
+    methods: ["GET", "POST"],
+  })
+);
+
+app.get("/", (req, res) => {
+  res.send("Backend is running");
 });
 
-app.post('/api/calculate', (req, res) => {
+// --- REAL CALCULATION ROUTE ---
+app.post("/api/calculate", (req, res) => {
   try {
     const { grossSalary, frequency } = req.body;
-    if (!grossSalary || !frequency) {
-      return res.status(400).json({ error: 'grossSalary and frequency required' });
-    }
 
-    const sssEmployee = Math.round(grossSalary * 0.045);
-    const philhealthEmployee = Math.round(grossSalary * 0.025);
-    const pagibigEmployee = Math.round(grossSalary * 0.02);
-    const withholdingTax = Math.round(grossSalary * 0.075);
+    const monthlySalary =
+      frequency === "monthly"
+        ? grossSalary
+        : frequency === "semi-monthly"
+        ? grossSalary * 2
+        : grossSalary * 4.345;
 
-    let net = grossSalary - sssEmployee - philhealthEmployee - pagibigEmployee - withholdingTax;
-    if (frequency === 'semi-monthly') {
-      net = net / 2;
-    }
+    // Sample simple tax
+    const tax = monthlySalary * 0.10;
 
     res.json({
-      gross: grossSalary,
-      periodLabel: frequency,
-      sssEmployee,
-      philhealthEmployee,
-      pagibigEmployee,
-      withholdingTax,
-      net
+      success: true,
+      monthlySalary,
+      tax,
+      netPay: monthlySalary - tax,
     });
   } catch (err) {
-    console.error('Calculation error:', err);
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.status(500).json({ success: false, error: "Server error" });
   }
 });
 
-// Use dynamic port — necessary on Railway
+// --- IMPORTANT ---
 const port = process.env.PORT || 4000;
-app.listen(port, () => console.log(`Server listening on port ${port}`));
+app.listen(port, () =>
+  console.log(`Server running on port ${port}`)
+);
