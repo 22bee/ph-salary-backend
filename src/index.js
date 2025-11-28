@@ -7,7 +7,7 @@ const app = express();
 app.use(cors({
   origin: [
     'http://localhost:5173',                 // local dev
-    'https://your-frontend-url.vercel.app'   // replace with your Vercel URL
+    'https://ph-salary-frontend-tim.vercel.app'   // replace with your Vercel URL
   ]
 }));
 
