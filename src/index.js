@@ -6,7 +6,7 @@ const app = express();
 
 // Allow frontend to communicate
 app.use(cors({
-  origin: ['http://localhost:5173', 'https://YOUR_FRONTEND_URL.vercel.app'],
+  origin: ['http://localhost:5173', 'https://ph-salary-frontend-tim.vercel.app/'],
 }));
 
 app.use(bodyParser.json());
