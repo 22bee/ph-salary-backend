@@ -4,45 +4,41 @@ const bodyParser = require('body-parser');
 
 const app = express();
 
-// Allow frontend to communicate
+// Allow frontend on localhost and Vercel to talk to backend
 app.use(cors({
-  origin: ['http://localhost:5173', 'https://ph-salary-frontend-tim.vercel.app/'],
+  origin: [
+    'http://localhost:5173',                 // local dev
+    'https://ph-salary-frontend-tim.vercel.app'   // live frontend URL
+  ]
 }));
 
 app.use(bodyParser.json());
 
+// Optional GET route for testing in browser
+app.get('/', (req, res) => {
+  res.send('Backend is running!');
+});
+
+app.get('/api/calculate', (req, res) => {
+  res.send('Backend is running. Use POST to calculate.');
+});
+
+// POST route for salary calculation
 app.post('/api/calculate', (req, res) => {
-  let { grossSalary, frequency } = req.body;
+  const { grossSalary, frequency } = req.body;
 
-  if (!grossSalary || isNaN(grossSalary)) {
-    return res.status(400).json({ message: 'Invalid gross salary' });
-  }
+  // Calculate government-mandated deductions
+  const sssEmployee = Math.round(grossSalary * 0.045);
+  const philhealthEmployee = Math.round(grossSalary * 0.025);
+  const pagibigEmployee = Math.round(grossSalary * 0.02);
+  const withholdingTax = Math.round(grossSalary * 0.075);
 
-  // Adjust gross salary based on frequency
-  let adjustedGross = grossSalary;
-  switch (frequency) {
-    case 'semi-monthly':
-      adjustedGross = grossSalary / 2; // split monthly salary into 2
-      break;
-    case 'daily':
-      adjustedGross = grossSalary / 22; // assume 22 workdays/month
-      break;
-    case 'hourly':
-      adjustedGross = grossSalary / 176; // assume 22 workdays * 8 hours
-      break;
-    default:
-      adjustedGross = grossSalary; // monthly
-  }
-
-  // Deductions (employee share)
-  const sssEmployee = Math.round(adjustedGross * 0.045);
-  const philhealthEmployee = Math.round(adjustedGross * 0.025);
-  const pagibigEmployee = Math.round(adjustedGross * 0.02);
-  const withholdingTax = Math.round(adjustedGross * 0.075);
-  const net = adjustedGross - sssEmployee - philhealthEmployee - pagibigEmployee - withholdingTax;
+  // Net salary, adjusted for semi-monthly
+  let net = grossSalary - sssEmployee - philhealthEmployee - pagibigEmployee - withholdingTax;
+  if (frequency === 'semi-monthly') net = net / 2;
 
   res.json({
-    gross: adjustedGross,
+    gross: grossSalary,
     periodLabel: frequency,
     sssEmployee,
     philhealthEmployee,
@@ -52,5 +48,6 @@ app.post('/api/calculate', (req, res) => {
   });
 });
 
+// Use dynamic port for Railway / local
 const port = process.env.PORT || 4000;
-app.listen(port, () => console.log(`Backend running on port ${port}`));
+app.listen(port, () => console.log('Server listening on port', port));
